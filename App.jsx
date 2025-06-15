@@ -1342,7 +1342,7 @@ const SplashScreen = ({ navigation }) => {
           delay={800}
           style={styles.tagline}
         >
-          Weather refined for you
+          Powered by skAI
         </Animatable.Text>
         
         {/* Three dots loading indicator */}
