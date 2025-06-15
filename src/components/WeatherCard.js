@@ -564,7 +564,7 @@
 
 
 
-
+// src/components/WeatherCard.js
 import React, { useRef, useEffect } from 'react';
 import {
   View,
