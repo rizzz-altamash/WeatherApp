@@ -661,6 +661,8 @@ import SearchBar from '../components/SearchBar';
 import WeatherCard from '../components/WeatherCard';
 import HourlyForecast from '../components/HourlyForecast';
 import WeeklyForecast from '../components/WeeklyForecast';
+import ChatBot from '../components/ChatBot';
+import FloatingChatButton from '../components/FloatingChatButton';
 
 const { width, height } = Dimensions.get('window');
 
@@ -671,6 +673,7 @@ const HomeScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [location, setLocation] = useState({ lat: null, lon: null });
   const [city, setCity] = useState('');
+  const [chatVisible, setChatVisible] = useState(false);
 
   const scrollViewRef = useRef(null);
 
@@ -845,6 +848,103 @@ const HomeScreen = () => {
     return null;
   };
 
+  // Enhanced weather context preparation function
+  const prepareWeatherContext = () => {
+    if (!weather) return null;
+
+    // Format time helper
+    const formatTime = (timestamp) => {
+      if (!timestamp) return 'N/A';
+      return new Date(timestamp * 1000).toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    };
+
+    // Prepare forecast data if available
+    let forecastData = null;
+    if (forecast && forecast.list) {
+      // Group forecast by day and get daily min/max
+      const dailyData = {};
+      forecast.list.forEach((item) => {
+        const date = new Date(item.dt * 1000).toDateString();
+        if (!dailyData[date]) {
+          dailyData[date] = {
+            temps: [],
+            conditions: [],
+            pop: 0,
+            date: new Date(item.dt * 1000),
+          };
+        }
+        dailyData[date].temps.push(item.main.temp);
+        dailyData[date].conditions.push(item.weather[0].main);
+        dailyData[date].pop = Math.max(dailyData[date].pop, item.pop || 0);
+      });
+
+      // Convert to array and calculate daily stats
+      forecastData = Object.values(dailyData).slice(0, 5).map((day) => ({
+        date: day.date,
+        tempMin: Math.round(Math.min(...day.temps)),
+        tempMax: Math.round(Math.max(...day.temps)),
+        condition: day.conditions[Math.floor(day.conditions.length / 2)], // Get mid-day condition
+        pop: day.pop,
+      }));
+    }
+
+    // Calculate UV Index if using OneCall API
+    // Note: Basic weather API doesn't provide UV, so this would need OneCall API
+    const uvIndex = weather.uvi || null;
+
+    return {
+      // Location info
+      city: city || weather.name,
+      country: weather.sys?.country,
+      
+      // Temperature data
+      temperature: Math.round(weather.main.temp),
+      feelsLike: Math.round(weather.main.feels_like),
+      tempMin: Math.round(weather.main.temp_min),
+      tempMax: Math.round(weather.main.temp_max),
+      
+      // Weather conditions
+      condition: weather.weather[0].main,
+      description: weather.weather[0].description,
+      
+      // Atmospheric data
+      humidity: weather.main.humidity,
+      pressure: weather.main.pressure,
+      visibility: weather.visibility,
+      
+      // Wind data
+      windSpeed: weather.wind.speed,
+      windDeg: weather.wind.deg,
+      windGust: weather.wind.gust,
+      
+      // Cloud coverage
+      clouds: weather.clouds?.all,
+      
+      // Rain/Snow data (if available)
+      rain1h: weather.rain?.['1h'],
+      rain3h: weather.rain?.['3h'],
+      snow1h: weather.snow?.['1h'],
+      snow3h: weather.snow?.['3h'],
+      
+      // Sun times
+      sunrise: formatTime(weather.sys.sunrise),
+      sunset: formatTime(weather.sys.sunset),
+      
+      // UV Index (if available from OneCall API)
+      uvIndex: uvIndex,
+      
+      // Forecast data
+      forecast: forecastData,
+      
+      // Additional metadata
+      lastUpdated: new Date(),
+      timezone: weather.timezone,
+    };
+  };
+
   if (loading && !refreshing) {
     return (
       <LinearGradient colors={['#1e3c72', '#2a5298', '#3d7eaa']} style={styles.container}>
@@ -964,6 +1064,18 @@ const HomeScreen = () => {
           </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
+
+      {weather && (
+        <>
+          <FloatingChatButton onPress={() => setChatVisible(true)} />
+          <ChatBot
+            visible={chatVisible}
+            onClose={() => setChatVisible(false)}
+            weatherData={prepareWeatherContext()}
+          />
+        </>
+      )}
+
     </View>
   );
 };

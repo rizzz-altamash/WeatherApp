@@ -1321,7 +1321,7 @@ const SplashScreen = ({ navigation }) => {
             end={{x: 1, y: 1}}
           >
             <View style={styles.logoInner}>
-              <Icon name="cloud-rain" size={50} color="#FFFFFF" />
+              <Icon name="cloud-lightning" size={50} color="#FFFFFF" />
             </View>
           </LinearGradient>
           
