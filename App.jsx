@@ -1600,7 +1600,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     color: '#059669',
     marginBottom: 50,
-    fontWeight: '400',
+    fontWeight: '500',
     letterSpacing: 1,
   },
   loadingContainer: {

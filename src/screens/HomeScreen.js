@@ -486,17 +486,17 @@ const HomeScreen = () => {
               Tuning into the Atmosphere
             </Animatable.Text>
             
-            <Animatable.Text
-              animation="fadeInUp"
-              delay={800}
+            {/* <Animatable.Text
+              animation="fadeIn"
+              delay={1500}
               style={[styles.loadingSubText, { color: isNight ? '#56B4E9' : '#059669' }]}
             >
               Just a moment
-            </Animatable.Text>
+            </Animatable.Text> */}
 
             <Animatable.Text
-              animation="fadeInUp"
-              delay={900}
+              animation="fadeIn"
+              delay={1500}
               style={[styles.loadingSubText2, { color: isNight ? '#56B4E9' : '#059669' }]}
             >
               Initializing skAI

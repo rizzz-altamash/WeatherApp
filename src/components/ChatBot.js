@@ -1207,7 +1207,7 @@ const ChatBot = ({ visible, onClose, weatherData }) => {
     ];
 
   // Function to animate typing effect
-  const animateTyping = (messageId, fullText, typingSpeed = 30) => {
+  const animateTyping = (messageId, fullText, typingSpeed = 40) => {
     let currentIndex = 0;
     
     typingIntervalRef.current = setInterval(() => {
@@ -1309,7 +1309,7 @@ const ChatBot = ({ visible, onClose, weatherData }) => {
 
   // Quick action buttons
   const quickActions = [
-    { icon: 'user-check', text: 'What should I wear?', query: 'What should I wear today? Give me detailed outfit suggestions.' },
+    { icon: 'user-check', text: 'What should I wear?', query: 'What should I wear today? Give me outfit suggestions.' },
     { icon: 'umbrella', text: 'Rain gear needed?', query: 'Do I need an umbrella today?' },
     { icon: 'sun', text: 'UV protection?', query: 'Do I need sunscreen today?' },
     { icon: 'activity', text: 'Outdoor plans', query: 'Is it good weather for outdoor activities?' },
