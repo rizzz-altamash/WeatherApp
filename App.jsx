@@ -1409,18 +1409,18 @@ const SplashScreen = ({ navigation }) => {
           style={styles.featuresContainer}
         >
           <View style={styles.featureItem}>
-            <Icon name="map-pin" size={16} color="#10B981" />
-            <Text style={styles.featureText}>Real-time location</Text>
+            <Icon name="sun" size={16} color="#10B981" />
+            <Text style={styles.featureText}>Weather details</Text>
           </View>
           <View style={styles.featureDivider} />
           <View style={styles.featureItem}>
             <Icon name="trending-up" size={16} color="#10B981" />
-            <Text style={styles.featureText}>5-day forecast</Text>
+            <Text style={styles.featureText}>5-days forecasts</Text>
           </View>
           <View style={styles.featureDivider} />
           <View style={styles.featureItem}>
-            <Icon name="droplet" size={16} color="#10B981" />
-            <Text style={styles.featureText}>Weather details</Text>
+            <Icon name="map-pin" size={16} color="#10B981" />
+            <Text style={styles.featureText}>Real-time locations</Text>
           </View>
         </Animatable.View>
       </View>
@@ -1626,10 +1626,12 @@ const styles = StyleSheet.create({
     borderRadius: 7,
   },
   featuresContainer: {
-    flexDirection: 'row',
+    // flexDirection: 'row',
     alignItems: 'center',
     position: 'absolute',
     bottom: 80,
+    // paddingLeft: 30,
+    // paddingRight: 30,
   },
   featureItem: {
     flexDirection: 'row',
