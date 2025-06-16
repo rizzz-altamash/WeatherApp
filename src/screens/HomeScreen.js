@@ -714,7 +714,17 @@ const HomeScreen = () => {
       },
       (error) => {
         console.log(error);
-        fetchWeatherData(40.7128, -74.0060);
+        if (error.code === 2) {
+          Alert.alert(
+            'Location Services Off',
+            'Please turn on location services to get weather for your current location.',
+            [
+              { text: 'Use Default Location', onPress: () => fetchWeatherData(23.3441, 85.3096) },
+              { text: 'Settings', onPress: () => Linking.openSettings() }
+            ]
+          );
+        }
+        // fetchWeatherData(40.7128, -74.0060);
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
     );
@@ -1252,3 +1262,866 @@ const styles = StyleSheet.create({
 });
 
 export default HomeScreen;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// // src/screens/HomeScreen.js
+// import React, { useState, useEffect, useRef } from 'react';
+// import {
+//   View,
+//   Text,
+//   StyleSheet,
+//   ScrollView,
+//   RefreshControl,
+//   StatusBar,
+//   Dimensions,
+//   TouchableOpacity,
+//   PermissionsAndroid,
+//   Platform,
+//   Alert,
+//   Linking,
+// } from 'react-native';
+// import LinearGradient from 'react-native-linear-gradient';
+// import * as Animatable from 'react-native-animatable';
+// import Icon from 'react-native-vector-icons/Feather';
+// import Geolocation from 'react-native-geolocation-service';
+// import { weatherAPI } from '../services/weatherAPI';
+// import SearchBar from '../components/SearchBar';
+// import WeatherCard from '../components/WeatherCard';
+// import HourlyForecast from '../components/HourlyForecast';
+// import WeeklyForecast from '../components/WeeklyForecast';
+// import ChatBot from '../components/ChatBot';
+// import FloatingChatButton from '../components/FloatingChatButton';
+// import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// const { width, height } = Dimensions.get('window');
+
+// const HomeScreen = () => {
+//   const [weather, setWeather] = useState(null);
+//   const [forecast, setForecast] = useState(null);
+//   const [loading, setLoading] = useState(true);
+//   const [refreshing, setRefreshing] = useState(false);
+//   const [location, setLocation] = useState({ lat: null, lon: null });
+//   const [city, setCity] = useState('');
+//   const [chatVisible, setChatVisible] = useState(false);
+//   const [locationError, setLocationError] = useState(null);
+//   const [loadingMessage, setLoadingMessage] = useState('Getting your location...');
+
+//   const scrollViewRef = useRef(null);
+
+//   useEffect(() => {
+//     initializeApp();
+//   }, []);
+
+//   const initializeApp = async () => {
+//     // First try to load last known location from storage
+//     const lastLocation = await getLastKnownLocation();
+//     if (lastLocation) {
+//       setLoadingMessage('Loading weather for ' + lastLocation.city);
+//       setLocation({ lat: lastLocation.lat, lon: lastLocation.lon });
+//       setCity(lastLocation.city);
+//       fetchWeatherData(lastLocation.lat, lastLocation.lon);
+//     }
+    
+//     // Then request current location
+//     requestLocationPermission();
+//   };
+
+//   const getLastKnownLocation = async () => {
+//     try {
+//       const locationData = await AsyncStorage.getItem('lastKnownLocation');
+//       return locationData ? JSON.parse(locationData) : null;
+//     } catch (error) {
+//       console.error('Error reading last location:', error);
+//       return null;
+//     }
+//   };
+
+//   const saveLastKnownLocation = async (lat, lon, cityName) => {
+//     try {
+//       await AsyncStorage.setItem('lastKnownLocation', JSON.stringify({
+//         lat,
+//         lon,
+//         city: cityName,
+//         timestamp: new Date().getTime()
+//       }));
+//     } catch (error) {
+//       console.error('Error saving last location:', error);
+//     }
+//   };
+
+//   const requestLocationPermission = async () => {
+//     if (Platform.OS === 'android') {
+//       try {
+//         const granted = await PermissionsAndroid.request(
+//           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+//           {
+//             title: 'Weathronix Location Permission',
+//             message: 'Weathronix needs access to your location for accurate local weather',
+//             buttonNeutral: 'Ask Me Later',
+//             buttonNegative: 'Cancel',
+//             buttonPositive: 'OK',
+//           }
+//         );
+//         if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+//           getCurrentLocation();
+//         } else {
+//           handleLocationPermissionDenied();
+//         }
+//       } catch (err) {
+//         console.warn(err);
+//         handleLocationError('Permission request failed');
+//       }
+//     } else {
+//       // iOS
+//       getCurrentLocation();
+//     }
+//   };
+
+//   const handleLocationPermissionDenied = () => {
+//     setLocationError('location_permission_denied');
+//     Alert.alert(
+//       'Location Permission Required',
+//       'Weathronix needs location access to show your local weather. You can enable it in settings or search for your city manually.',
+//       [
+//         { text: 'Open Settings', onPress: openAppSettings },
+//         { text: 'Search City', onPress: () => {} },
+//       ]
+//     );
+//   };
+
+//   const openAppSettings = () => {
+//     Linking.openSettings();
+//   };
+
+//   const getCurrentLocation = () => {
+//     setLoadingMessage('Getting your current location...');
+    
+//     Geolocation.getCurrentPosition(
+//       async (position) => {
+//         const { latitude, longitude } = position.coords;
+//         console.log('Location obtained:', latitude, longitude);
+//         setLocation({ lat: latitude, lon: longitude });
+//         setLocationError(null);
+//         fetchWeatherData(latitude, longitude);
+//       },
+//       (error) => {
+//         console.error('Location error:', error);
+//         handleLocationError(error.message);
+//       },
+//       { 
+//         enableHighAccuracy: true, 
+//         timeout: 20000, // Increased timeout
+//         maximumAge: 10000,
+//         showLocationDialog: true, // Android only
+//         forceRequestLocation: true, // Android only
+//       }
+//     );
+//   };
+
+//   const handleLocationError = async (errorMessage) => {
+//     setLocationError(errorMessage);
+    
+//     // If we have a last known location, use it
+//     const lastLocation = await getLastKnownLocation();
+//     if (lastLocation) {
+//       Alert.alert(
+//         'Location Error',
+//         `Unable to get current location. Showing weather for last known location: ${lastLocation.city}`,
+//         [{ text: 'OK' }]
+//       );
+//       return;
+//     }
+
+//     // Otherwise, prompt user to search for their city
+//     Alert.alert(
+//       'Location Not Available',
+//       'Unable to get your location. Please search for your city using the search bar above.',
+//       [
+//         { text: 'OK' },
+//         { 
+//           text: 'Location Settings', 
+//           onPress: openAppSettings 
+//         }
+//       ]
+//     );
+    
+//     setLoading(false);
+//   };
+
+//   const fetchWeatherData = async (lat, lon) => {
+//     try {
+//       setLoading(true);
+//       setLoadingMessage('Fetching weather data...');
+      
+//       const [currentWeather, forecastData] = await Promise.all([
+//         weatherAPI.getCurrentWeather(lat, lon),
+//         weatherAPI.getForecast(lat, lon),
+//       ]);
+      
+//       setWeather(currentWeather);
+//       setForecast(forecastData);
+//       setCity(currentWeather.name);
+      
+//       // Save this location as the last known location
+//       await saveLastKnownLocation(lat, lon, currentWeather.name);
+      
+//       setLocationError(null);
+//     } catch (error) {
+//       console.error('Error fetching weather data:', error);
+//       Alert.alert(
+//         'Weather Data Error',
+//         'Failed to fetch weather data. Please check your internet connection and try again.',
+//         [{ text: 'Retry', onPress: () => fetchWeatherData(lat, lon) }]
+//       );
+//     } finally {
+//       setLoading(false);
+//       setRefreshing(false);
+//     }
+//   };
+
+//   const handleCitySearch = async (cityName) => {
+//     try {
+//       setLoading(true);
+//       setLoadingMessage(`Searching for ${cityName}...`);
+      
+//       const currentWeather = await weatherAPI.getWeatherByCity(cityName);
+//       const forecastData = await weatherAPI.getForecast(
+//         currentWeather.coord.lat,
+//         currentWeather.coord.lon
+//       );
+      
+//       setWeather(currentWeather);
+//       setForecast(forecastData);
+//       setCity(currentWeather.name);
+//       setLocation({
+//         lat: currentWeather.coord.lat,
+//         lon: currentWeather.coord.lon,
+//       });
+      
+//       // Save this as the last known location
+//       await saveLastKnownLocation(
+//         currentWeather.coord.lat,
+//         currentWeather.coord.lon,
+//         currentWeather.name
+//       );
+      
+//       setLocationError(null);
+//     } catch (error) {
+//       console.error('Error searching city:', error);
+//       if (error.message === 'City not found') {
+//         Alert.alert(
+//           'City Not Found',
+//           'Please check the spelling and try again. You can search for cities worldwide!',
+//           [{ text: 'OK' }]
+//         );
+//       } else {
+//         Alert.alert(
+//           'Search Error',
+//           'Failed to fetch weather data. Please check your internet connection.',
+//           [{ text: 'OK' }]
+//         );
+//       }
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const onRefresh = () => {
+//     setRefreshing(true);
+//     if (location.lat && location.lon) {
+//       fetchWeatherData(location.lat, location.lon);
+//     } else {
+//       getCurrentLocation();
+//     }
+//   };
+
+//   const getBackgroundGradient = () => {
+//     if (!weather) return ['#1e3c72', '#2a5298', '#3d7eaa'];
+    
+//     const condition = weather.weather[0].main.toLowerCase();
+//     const hour = new Date().getHours();
+//     const isNight = hour < 6 || hour > 18;
+
+//     if (isNight) {
+//       switch (condition) {
+//         case 'clear':
+//           return ['#0c1445', '#1e3c72', '#2a5298'];
+//         case 'clouds':
+//           return ['#1a1a2e', '#16213e', '#0f3460'];
+//         case 'rain':
+//         case 'drizzle':
+//           return ['#1a1a2e', '#2d3561', '#434a77'];
+//         case 'thunderstorm':
+//           return ['#0f0c29', '#302b63', '#24243e'];
+//         case 'snow':
+//           return ['#2c3e50', '#3498db', '#2980b9'];
+//         default:
+//           return ['#0c1445', '#1e3c72', '#2a5298'];
+//       }
+//     }
+
+//     switch (condition) {
+//       case 'clear':
+//         return ['#56CCF2', '#2F80ED', '#2D9CDB'];
+//       case 'clouds':
+//         return ['#606c88', '#3f4c6b', '#536976'];
+//       case 'rain':
+//       case 'drizzle':
+//         return ['#4b6cb7', '#182848', '#2c3e50'];
+//       case 'thunderstorm':
+//         return ['#373B44', '#4286f4', '#2e3192'];
+//       case 'snow':
+//         return ['#E0EAFC', '#CFDEF3', '#b8cce4'];
+//       default:
+//         return ['#56CCF2', '#2F80ED', '#2D9CDB'];
+//     }
+//   };
+
+//   const getBackgroundElements = () => {
+//     if (!weather) return null;
+    
+//     const condition = weather.weather[0].main.toLowerCase();
+//     const hour = new Date().getHours();
+//     const isNight = hour < 6 || hour > 18;
+
+//     if (isNight && condition === 'clear') {
+//       // Stars for clear night
+//       return (
+//         <>
+//           {[...Array(20)].map((_, i) => (
+//             <View
+//               key={`star-${i}`}
+//               style={[
+//                 styles.star,
+//                 {
+//                   top: `${Math.random() * 70}%`,
+//                   left: `${Math.random() * 100}%`,
+//                   width: Math.random() * 3 + 1,
+//                   height: Math.random() * 3 + 1,
+//                 }
+//               ]}
+//             />
+//           ))}
+//         </>
+//       );
+//     }
+
+//     return null;
+//   };
+
+//   // Enhanced weather context preparation function
+//   const prepareWeatherContext = () => {
+//     if (!weather) return null;
+
+//     // Format time helper
+//     const formatTime = (timestamp) => {
+//       if (!timestamp) return 'N/A';
+//       return new Date(timestamp * 1000).toLocaleTimeString([], { 
+//         hour: '2-digit', 
+//         minute: '2-digit' 
+//       });
+//     };
+
+//     // Prepare forecast data if available
+//     let forecastData = null;
+//     if (forecast && forecast.list) {
+//       // Group forecast by day and get daily min/max
+//       const dailyData = {};
+//       forecast.list.forEach((item) => {
+//         const date = new Date(item.dt * 1000).toDateString();
+//         if (!dailyData[date]) {
+//           dailyData[date] = {
+//             temps: [],
+//             conditions: [],
+//             pop: 0,
+//             date: new Date(item.dt * 1000),
+//           };
+//         }
+//         dailyData[date].temps.push(item.main.temp);
+//         dailyData[date].conditions.push(item.weather[0].main);
+//         dailyData[date].pop = Math.max(dailyData[date].pop, item.pop || 0);
+//       });
+
+//       // Convert to array and calculate daily stats
+//       forecastData = Object.values(dailyData).slice(0, 5).map((day) => ({
+//         date: day.date,
+//         tempMin: Math.round(Math.min(...day.temps)),
+//         tempMax: Math.round(Math.max(...day.temps)),
+//         condition: day.conditions[Math.floor(day.conditions.length / 2)], // Get mid-day condition
+//         pop: day.pop,
+//       }));
+//     }
+
+//     // Calculate UV Index if using OneCall API
+//     // Note: Basic weather API doesn't provide UV, so this would need OneCall API
+//     const uvIndex = weather.uvi || null;
+
+//     return {
+//       // Location info
+//       city: city || weather.name,
+//       country: weather.sys?.country,
+      
+//       // Temperature data
+//       temperature: Math.round(weather.main.temp),
+//       feelsLike: Math.round(weather.main.feels_like),
+//       tempMin: Math.round(weather.main.temp_min),
+//       tempMax: Math.round(weather.main.temp_max),
+      
+//       // Weather conditions
+//       condition: weather.weather[0].main,
+//       description: weather.weather[0].description,
+      
+//       // Atmospheric data
+//       humidity: weather.main.humidity,
+//       pressure: weather.main.pressure,
+//       visibility: weather.visibility,
+      
+//       // Wind data
+//       windSpeed: weather.wind.speed,
+//       windDeg: weather.wind.deg,
+//       windGust: weather.wind.gust,
+      
+//       // Cloud coverage
+//       clouds: weather.clouds?.all,
+      
+//       // Rain/Snow data (if available)
+//       rain1h: weather.rain?.['1h'],
+//       rain3h: weather.rain?.['3h'],
+//       snow1h: weather.snow?.['1h'],
+//       snow3h: weather.snow?.['3h'],
+      
+//       // Sun times
+//       sunrise: formatTime(weather.sys.sunrise),
+//       sunset: formatTime(weather.sys.sunset),
+      
+//       // UV Index (if available from OneCall API)
+//       uvIndex: uvIndex,
+      
+//       // Forecast data
+//       forecast: forecastData,
+      
+//       // Additional metadata
+//       lastUpdated: new Date(),
+//       timezone: weather.timezone,
+//     };
+//   };
+
+//   if (loading && !refreshing) {
+//     return (
+//       <LinearGradient colors={['#1e3c72', '#2a5298', '#3d7eaa']} style={styles.container}>
+//         <View style={styles.backgroundDecoration}>
+//           <View style={styles.loadingOrb1} />
+//           <View style={styles.loadingOrb2} />
+//         </View>
+//         <View style={styles.loadingContainer}>
+//           <View style={styles.loadingCard}>
+//             <Animatable.View animation="rotate" iterationCount="infinite" duration={3000}>
+//               <View>
+//                 <Icon name="sun" size={40} color="#FFD700" />
+//               </View>
+//             </Animatable.View>
+//             <Text style={styles.loadingText}>{loadingMessage}</Text>
+//             <Text style={styles.loadingSubtext}>Just a moment</Text>
+            
+//             {locationError && (
+//               <TouchableOpacity 
+//                 style={styles.searchPrompt}
+//                 onPress={() => setLoading(false)}
+//               >
+//                 <Icon name="search" size={20} color="#FFF" />
+//                 <Text style={styles.searchPromptText}>Search for your city</Text>
+//               </TouchableOpacity>
+//             )}
+//           </View>
+//         </View>
+//       </LinearGradient>
+//     );
+//   }
+
+//   // Show empty state with search if no weather data and not loading
+//   if (!weather && !loading) {
+//     return (
+//       <View style={styles.container}>
+//         <LinearGradient 
+//           colors={['#1e3c72', '#2a5298', '#3d7eaa']} 
+//           style={StyleSheet.absoluteFillObject}
+//         />
+//         <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        
+//         <View style={styles.emptyStateContainer}>
+//           <SearchBar onSearch={handleCitySearch} />
+          
+//           <View style={styles.emptyStateContent}>
+//             <Icon name="map-pin" size={60} color="rgba(255,255,255,0.3)" />
+//             <Text style={styles.emptyStateTitle}>Welcome to Weathronix!</Text>
+//             <Text style={styles.emptyStateText}>
+//               Search for your city above or enable location services for automatic weather updates
+//             </Text>
+            
+//             {locationError && (
+//               <TouchableOpacity 
+//                 style={styles.enableLocationButton}
+//                 onPress={requestLocationPermission}
+//               >
+//                 <Icon name="navigation" size={20} color="#FFF" />
+//                 <Text style={styles.enableLocationText}>Enable Location</Text>
+//               </TouchableOpacity>
+//             )}
+//           </View>
+//         </View>
+//       </View>
+//     );
+//   }
+
+//   return (
+//     <View style={styles.container}>
+//       {/* Multiple gradient layers for depth */}
+//       <LinearGradient 
+//         colors={getBackgroundGradient()} 
+//         style={StyleSheet.absoluteFillObject}
+//         start={{x: 0, y: 0}}
+//         end={{x: 1, y: 1}}
+//       />
+      
+//       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      
+//       {/* Enhanced background decoration */}
+//       <View style={styles.backgroundDecoration}>
+//         {/* Glowing orbs */}
+//         <View style={styles.glowingOrb1}>
+//           <LinearGradient
+//             colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)', 'transparent']}
+//             style={styles.orbGradient}
+//           />
+//         </View>
+        
+//         <View style={styles.glowingOrb2}>
+//           <LinearGradient
+//             colors={['rgba(100,200,255,0.1)', 'rgba(100,200,255,0.05)', 'transparent']}
+//             style={styles.orbGradient}
+//           />
+//         </View>
+        
+//         <View style={styles.glowingOrb3}>
+//           <LinearGradient
+//             colors={['rgba(255,200,100,0.08)', 'rgba(255,200,100,0.04)', 'transparent']}
+//             style={styles.orbGradient}
+//           />
+//         </View>
+        
+//         {/* Geometric shapes */}
+//         <View style={styles.hexagon1} />
+//         <View style={styles.hexagon2} />
+        
+//         {/* Floating elements */}
+//         <View style={styles.floatingSquare1} />
+//         <View style={styles.floatingSquare2} />
+//         <View style={styles.floatingCircle} />
+        
+//         {/* Weather-specific elements */}
+//         {getBackgroundElements()}
+//       </View>
+      
+//       <ScrollView
+//         ref={scrollViewRef}
+//         contentContainerStyle={styles.scrollContent}
+//         refreshControl={
+//           <RefreshControl
+//             refreshing={refreshing}
+//             onRefresh={onRefresh}
+//             tintColor="#FFF"
+//           />
+//         }
+//         showsVerticalScrollIndicator={false}
+//       >
+//         <SearchBar onSearch={handleCitySearch} />
+        
+//         {weather && (
+//           <Animatable.View animation="fadeInUp" duration={800}>
+//             <WeatherCard weather={weather} city={city} />
+//           </Animatable.View>
+//         )}
+
+//         {forecast && (
+//           <>
+//             <Animatable.View animation="fadeInUp" duration={1000} delay={200}>
+//               <HourlyForecast forecast={forecast} />
+//             </Animatable.View>
+
+//             <Animatable.View animation="fadeInUp" duration={1200} delay={400}>
+//               <WeeklyForecast forecast={forecast} />
+//             </Animatable.View>
+//           </>
+//         )}
+
+//         <TouchableOpacity 
+//           style={styles.locationButton} 
+//           onPress={getCurrentLocation}
+//           activeOpacity={0.8}
+//         >
+//           <LinearGradient
+//             colors={['rgba(255,255,255,0.15)', 'rgba(255,255,255,0.08)']}
+//             style={styles.locationButtonGradient}
+//             start={{x: 0, y: 0}}
+//             end={{x: 1, y: 0}}
+//           >
+//             <Icon name="navigation-2" size={18} color="#FFF" />
+//             <Text style={styles.locationButtonText}>Update Location</Text>
+//           </LinearGradient>
+//         </TouchableOpacity>
+//       </ScrollView>
+
+//       {weather && (
+//         <>
+//           <FloatingChatButton onPress={() => setChatVisible(true)} />
+//           <ChatBot
+//             visible={chatVisible}
+//             onClose={() => setChatVisible(false)}
+//             weatherData={prepareWeatherContext()}
+//           />
+//         </>
+//       )}
+
+//     </View>
+//   );
+// };
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//   },
+//   backgroundDecoration: {
+//     position: 'absolute',
+//     width: '100%',
+//     height: '100%',
+//   },
+//   glowingOrb1: {
+//     position: 'absolute',
+//     width: 500,
+//     height: 500,
+//     borderRadius: 250,
+//     top: -250,
+//     right: -100,
+//     opacity: 0.6,
+//   },
+//   glowingOrb2: {
+//     position: 'absolute',
+//     width: 400,
+//     height: 400,
+//     borderRadius: 200,
+//     bottom: -200,
+//     left: -150,
+//     opacity: 0.5,
+//   },
+//   glowingOrb3: {
+//     position: 'absolute',
+//     width: 300,
+//     height: 300,
+//     borderRadius: 150,
+//     top: '40%',
+//     right: -100,
+//     opacity: 0.4,
+//   },
+//   orbGradient: {
+//     width: '100%',
+//     height: '100%',
+//     borderRadius: 1000,
+//   },
+//   hexagon1: {
+//     position: 'absolute',
+//     width: 100,
+//     height: 100,
+//     backgroundColor: 'rgba(255, 255, 255, 0.03)',
+//     transform: [{ rotate: '30deg' }],
+//     top: '20%',
+//     left: 30,
+//   },
+//   hexagon2: {
+//     position: 'absolute',
+//     width: 80,
+//     height: 80,
+//     backgroundColor: 'rgba(255, 255, 255, 0.02)',
+//     transform: [{ rotate: '45deg' }],
+//     bottom: '30%',
+//     right: 40,
+//   },
+//   floatingSquare1: {
+//     position: 'absolute',
+//     width: 60,
+//     height: 60,
+//     backgroundColor: 'rgba(255, 255, 255, 0.02)',
+//     borderRadius: 15,
+//     transform: [{ rotate: '15deg' }],
+//     top: '60%',
+//     left: 50,
+//   },
+//   floatingSquare2: {
+//     position: 'absolute',
+//     width: 40,
+//     height: 40,
+//     backgroundColor: 'rgba(255, 255, 255, 0.03)',
+//     borderRadius: 10,
+//     transform: [{ rotate: '-20deg' }],
+//     top: '35%',
+//     right: 30,
+//   },
+//   floatingCircle: {
+//     position: 'absolute',
+//     width: 120,
+//     height: 120,
+//     borderRadius: 60,
+//     backgroundColor: 'rgba(255, 255, 255, 0.02)',
+//     bottom: '20%',
+//     right: '40%',
+//   },
+//   star: {
+//     position: 'absolute',
+//     backgroundColor: '#FFF',
+//     borderRadius: 50,
+//     opacity: 0.8,
+//     shadowColor: '#FFF',
+//     shadowOffset: { width: 0, height: 0 },
+//     shadowOpacity: 0.8,
+//     shadowRadius: 2,
+//   },
+//   loadingOrb1: {
+//     position: 'absolute',
+//     width: 300,
+//     height: 300,
+//     borderRadius: 150,
+//     backgroundColor: 'rgba(199, 205, 88, 0.05)',
+//     top: -100,
+//     right: -100,
+//   },
+//   loadingOrb2: {
+//     position: 'absolute',
+//     width: 200,
+//     height: 200,
+//     borderRadius: 100,
+//     backgroundColor: 'rgba(106, 233, 63, 0.05)',
+//     bottom: -50,
+//     left: -50,
+//   },
+//   scrollContent: {
+//     flexGrow: 1,
+//     paddingTop: StatusBar.currentHeight + 20 || 60,
+//     paddingBottom: 30,
+//   },
+//   loadingContainer: {
+//     flex: 1,
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//   },
+//   loadingCard: {
+//     alignItems: 'center',
+//     backgroundColor: 'rgba(88, 234, 55, 0.1)',
+//     padding: 40,
+//     borderRadius: 30,
+//     borderWidth: 1,
+//     borderColor: 'rgba(255, 255, 255, 0.2)',
+//     backdropFilter: 'blur(10px)',
+//   },
+//   loadingText: {
+//     color: '#FFF',
+//     fontSize: 18,
+//     fontWeight: '600',
+//     marginTop: 10,
+//   },
+//   loadingSubtext: {
+//     color: 'rgba(255, 255, 255, 0.6)',
+//     fontSize: 14,
+//     marginTop: 5,
+//   },
+//   searchPrompt: {
+//     flexDirection: 'row',
+//     alignItems: 'center',
+//     marginTop: 20,
+//     padding: 10,
+//     backgroundColor: 'rgba(255, 255, 255, 0.1)',
+//     borderRadius: 20,
+//   },
+//   searchPromptText: {
+//     color: '#FFF',
+//     marginLeft: 8,
+//     fontSize: 14,
+//   },
+//   locationButton: {
+//     marginHorizontal: 20,
+//     marginTop: 20,
+//     borderRadius: 20,
+//     overflow: 'hidden',
+//   },
+//   locationButtonGradient: {
+//     flexDirection: 'row',
+//     alignItems: 'center',
+//     justifyContent: 'center',
+//     padding: 16,
+//     borderRadius: 20,
+//     borderWidth: 1,
+//     borderColor: 'rgba(255, 255, 255, 0.2)',
+//   },
+//   locationButtonText: {
+//     color: '#FFF',
+//     marginLeft: 10,
+//     fontSize: 16,
+//     fontWeight: '600',
+//     letterSpacing: 0.5,
+//   },
+//   emptyStateContainer: {
+//     flex: 1,
+//     paddingTop: StatusBar.currentHeight + 20 || 60,
+//   },
+//   emptyStateContent: {
+//     flex: 1,
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//     paddingHorizontal: 40,
+//   },
+//   emptyStateTitle: {
+//     color: '#FFF',
+//     fontSize: 24,
+//     fontWeight: '600',
+//     marginTop: 20,
+//     marginBottom: 10,
+//   },
+//   emptyStateText: {
+//     color: 'rgba(255, 255, 255, 0.7)',
+//     fontSize: 16,
+//     textAlign: 'center',
+//     lineHeight: 24,
+//   },
+//   enableLocationButton: {
+//     flexDirection: 'row',
+//     alignItems: 'center',
+//     backgroundColor: 'rgba(255, 255, 255, 0.15)',
+//     paddingHorizontal: 20,
+//     paddingVertical: 12,
+//     borderRadius: 25,
+//     marginTop: 30,
+//   },
+//   enableLocationText: {
+//     color: '#FFF',
+//     marginLeft: 8,
+//     fontSize: 16,
+//     fontWeight: '500',
+//   },
+// });
+
+// export default HomeScreen;

@@ -784,11 +784,25 @@ const WeatherCard = ({ weather, city }) => {
         <View style={styles.detailsGrid}>
           <View style={styles.detailCard}>
             <LinearGradient
+              colors={['rgba(108, 234, 112, 0.1)', 'rgba(118,215,196,0.05)']}
+              style={styles.detailCardBg}
+            >
+              <View style={styles.detailIconContainer}>
+                <Icon name="eye" size={20} color="#fff" />
+              </View>
+              <Text style={styles.detailValue}>{(weather.visibility / 1000).toFixed(1)}</Text>
+              <Text style={styles.detailUnit}>km</Text>
+              <Text style={styles.detailLabel}>Visibility</Text>
+            </LinearGradient>
+          </View>
+
+          <View style={styles.detailCard}>
+            <LinearGradient
               colors={['rgba(74,144,226,0.1)', 'rgba(74,144,226,0.05)']}
               style={styles.detailCardBg}
             >
               <View style={styles.detailIconContainer}>
-                <Icon name="wind" size={20} color="#4A90E2" />
+                <Icon name="wind" size={20} color="#fff" />
               </View>
               <Text style={styles.detailValue}>{weather.wind.speed}</Text>
               <Text style={styles.detailUnit}>m/s</Text>
@@ -802,25 +816,11 @@ const WeatherCard = ({ weather, city }) => {
               style={styles.detailCardBg}
             >
               <View style={styles.detailIconContainer}>
-                <Icon name="droplet" size={20} color="#5DADE2" />
+                <Icon name="droplet" size={20} color="#fff" />
               </View>
               <Text style={styles.detailValue}>{weather.main.humidity}</Text>
               <Text style={styles.detailUnit}>%</Text>
               <Text style={styles.detailLabel}>Humidity</Text>
-            </LinearGradient>
-          </View>
-
-          <View style={styles.detailCard}>
-            <LinearGradient
-              colors={['rgba(108, 234, 112, 0.1)', 'rgba(118,215,196,0.05)']}
-              style={styles.detailCardBg}
-            >
-              <View style={styles.detailIconContainer}>
-                <Icon name="eye" size={20} color="#76D7C4" />
-              </View>
-              <Text style={styles.detailValue}>{(weather.visibility / 1000).toFixed(1)}</Text>
-              <Text style={styles.detailUnit}>km</Text>
-              <Text style={styles.detailLabel}>Visibility</Text>
             </LinearGradient>
           </View>
         </View>

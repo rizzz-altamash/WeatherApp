@@ -262,7 +262,7 @@ const HourlyForecast = ({ forecast }) => {
                 
                 <Text style={[styles.temp, isNow && styles.tempActive]}>{temp}°</Text>
                 
-                {item.pop > 0 && (
+                {item.pop >= 0 && (
                   <View style={styles.precipBadge}>
                     <Icon name="droplet" size={10} color="#5DADE2" />
                     <Text style={styles.precipText}>
